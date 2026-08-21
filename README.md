@@ -4,9 +4,11 @@ A reverse-Polish-notation (RPN) financial calculator inspired by the legendary H
 
 ## Install
 
-Run the included install script:
+Clone the repository and run the included install script:
 
 ```bash
+git clone https://github.com/sheep-farm/oma12c.git
+cd oma12c
 bin/install
 ```
 
