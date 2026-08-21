@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QFile>
 #include <QGuiApplication>
+#include <QHash>
 #include <QLocale>
 #include <QRect>
 #include <QSettings>
@@ -72,9 +73,12 @@ QString Backend::display() const {
     }
 
     if (m_programMode) {
-        if (m_programCounter < static_cast<int>(m_programSteps.size()))
-            return QString::number(m_programCounter) + QStringLiteral(" ") + m_programSteps[m_programCounter];
-        return QString::number(m_programCounter);
+        if (m_programCounter < static_cast<int>(m_programSteps.size())) {
+            const QString step = m_programSteps[m_programCounter];
+            return QString::number(m_programCounter).rightJustified(2, QLatin1Char('0'))
+                + QStringLiteral("- ") + programKeycode(step);
+        }
+        return QString::number(m_programCounter).rightJustified(2, QLatin1Char('0')) + QStringLiteral("-");
     }
 
     if (hasPendingEntry())
@@ -1933,6 +1937,113 @@ void Backend::clearProgram() {
     m_programCounter = 0;
     m_programRunning = false;
     m_entryReplace = true;
+}
+
+QString Backend::programKeycode(const QString &step) const {
+    // HP-12C-like keycodes: prefix 42 = f, 43 = g, 44 = STO, 45 = RCL,
+    // followed by the physical key keycode.  Plain keys use their own code.
+    static const QHash<QString, QString> codes = []() {
+        QHash<QString, QString> map;
+        map.insert(QStringLiteral("n"), QStringLiteral("11"));
+        map.insert(QStringLiteral("i"), QStringLiteral("12"));
+        map.insert(QStringLiteral("PV"), QStringLiteral("13"));
+        map.insert(QStringLiteral("PMT"), QStringLiteral("14"));
+        map.insert(QStringLiteral("FV"), QStringLiteral("15"));
+        map.insert(QStringLiteral("CHS"), QStringLiteral("16"));
+        map.insert(QStringLiteral("7"), QStringLiteral("17"));
+        map.insert(QStringLiteral("8"), QStringLiteral("18"));
+        map.insert(QStringLiteral("9"), QStringLiteral("19"));
+        map.insert(QStringLiteral("y^x"), QStringLiteral("21"));
+        map.insert(QStringLiteral("1/x"), QStringLiteral("22"));
+        map.insert(QStringLiteral("%T"), QStringLiteral("23"));
+        map.insert(QStringLiteral("Δ%"), QStringLiteral("24"));
+        map.insert(QStringLiteral("%"), QStringLiteral("25"));
+        map.insert(QStringLiteral("EEX"), QStringLiteral("26"));
+        map.insert(QStringLiteral("R/S"), QStringLiteral("31"));
+        map.insert(QStringLiteral("SST"), QStringLiteral("32"));
+        map.insert(QStringLiteral("R↓"), QStringLiteral("33"));
+        map.insert(QStringLiteral("x<>y"), QStringLiteral("34"));
+        map.insert(QStringLiteral("CLx"), QStringLiteral("35"));
+        map.insert(QStringLiteral("ENTER"), QStringLiteral("36"));
+        map.insert(QStringLiteral("4"), QStringLiteral("37"));
+        map.insert(QStringLiteral("5"), QStringLiteral("38"));
+        map.insert(QStringLiteral("6"), QStringLiteral("39"));
+        map.insert(QStringLiteral("×"), QStringLiteral("41"));
+        map.insert(QStringLiteral("÷"), QStringLiteral("42"));
+        map.insert(QStringLiteral("+"), QStringLiteral("43"));
+        map.insert(QStringLiteral("−"), QStringLiteral("44"));
+        map.insert(QStringLiteral("Σ+"), QStringLiteral("45"));
+        map.insert(QStringLiteral("1"), QStringLiteral("46"));
+        map.insert(QStringLiteral("2"), QStringLiteral("47"));
+        map.insert(QStringLiteral("3"), QStringLiteral("48"));
+        map.insert(QStringLiteral("0"), QStringLiteral("49"));
+        map.insert(QStringLiteral("."), QStringLiteral("50"));
+        map.insert(QStringLiteral("STO"), QStringLiteral("44 00"));
+        map.insert(QStringLiteral("RCL"), QStringLiteral("45 00"));
+        map.insert(QStringLiteral("GTO"), QStringLiteral("43 33"));
+        return map;
+    }();
+
+    static const QHash<QString, QString> prefixed = []() {
+        QHash<QString, QString> map;
+        map.insert(QStringLiteral("CLEAR FIN"), QStringLiteral("42 11"));
+        map.insert(QStringLiteral("12x"), QStringLiteral("43 11"));
+        map.insert(QStringLiteral("INT"), QStringLiteral("42 12"));
+        map.insert(QStringLiteral("12÷"), QStringLiteral("43 12"));
+        map.insert(QStringLiteral("NPV"), QStringLiteral("42 13"));
+        map.insert(QStringLiteral("CFo"), QStringLiteral("43 13"));
+        map.insert(QStringLiteral("AMORT"), QStringLiteral("42 14"));
+        map.insert(QStringLiteral("CFj"), QStringLiteral("43 14"));
+        map.insert(QStringLiteral("IRR"), QStringLiteral("42 15"));
+        map.insert(QStringLiteral("Nj"), QStringLiteral("43 15"));
+        map.insert(QStringLiteral("DATE"), QStringLiteral("43 16"));
+        map.insert(QStringLiteral("BEG"), QStringLiteral("43 17"));
+        map.insert(QStringLiteral("END"), QStringLiteral("43 18"));
+        map.insert(QStringLiteral("MEM"), QStringLiteral("43 19"));
+        map.insert(QStringLiteral("PRICE"), QStringLiteral("42 21"));
+        map.insert(QStringLiteral("√x"), QStringLiteral("43 21"));
+        map.insert(QStringLiteral("YTM"), QStringLiteral("42 22"));
+        map.insert(QStringLiteral("e^x"), QStringLiteral("43 22"));
+        map.insert(QStringLiteral("SL"), QStringLiteral("42 23"));
+        map.insert(QStringLiteral("LN"), QStringLiteral("43 23"));
+        map.insert(QStringLiteral("SOYD"), QStringLiteral("42 24"));
+        map.insert(QStringLiteral("FRAC"), QStringLiteral("43 24"));
+        map.insert(QStringLiteral("DB"), QStringLiteral("42 25"));
+        map.insert(QStringLiteral("INTG"), QStringLiteral("43 25"));
+        map.insert(QStringLiteral("ΔDYS"), QStringLiteral("43 26"));
+        map.insert(QStringLiteral("P/R"), QStringLiteral("42 31"));
+        map.insert(QStringLiteral("PSE"), QStringLiteral("43 31"));
+        map.insert(QStringLiteral("CLEAR Σ"), QStringLiteral("42 32"));
+        map.insert(QStringLiteral("BST"), QStringLiteral("43 32"));
+        map.insert(QStringLiteral("CLEAR PRGM"), QStringLiteral("42 33"));
+        map.insert(QStringLiteral("x≤y"), QStringLiteral("43 34"));
+        map.insert(QStringLiteral("CLEAR REG"), QStringLiteral("42 35"));
+        map.insert(QStringLiteral("x=0"), QStringLiteral("43 35"));
+        map.insert(QStringLiteral("CLEAR PREFIX"), QStringLiteral("42 36"));
+        map.insert(QStringLiteral("LSTx"), QStringLiteral("43 36"));
+        map.insert(QStringLiteral("D.MY"), QStringLiteral("43 37"));
+        map.insert(QStringLiteral("M.DY"), QStringLiteral("43 38"));
+        map.insert(QStringLiteral("x↔w"), QStringLiteral("43 39"));
+        map.insert(QStringLiteral("x̂,r"), QStringLiteral("43 46"));
+        map.insert(QStringLiteral("ŷ,r"), QStringLiteral("43 47"));
+        map.insert(QStringLiteral("n!"), QStringLiteral("43 48"));
+        map.insert(QStringLiteral("x̄"), QStringLiteral("43 49"));
+        map.insert(QStringLiteral("s"), QStringLiteral("43 50"));
+        map.insert(QStringLiteral("Σ−"), QStringLiteral("43 45"));
+        return map;
+    }();
+
+    if (prefixed.contains(step))
+        return prefixed.value(step);
+    if (step.startsWith(QStringLiteral("RCL ")))
+        return QStringLiteral("45 ") + step.mid(4).rightJustified(2, QLatin1Char('0'));
+    if (step.startsWith(QStringLiteral("STO ")))
+        return QStringLiteral("44 ") + step.mid(4).rightJustified(2, QLatin1Char('0'));
+    if (step.startsWith(QStringLiteral("GTO ")))
+        return step.mid(4);
+    if (codes.contains(step))
+        return codes.value(step);
+    return step;
 }
 
 bool Backend::conditionalSkip(const QString &test) {

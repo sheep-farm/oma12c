@@ -126,6 +126,7 @@ private:
     void goToStep(int step);
     void clearProgram();
     bool conditionalSkip(const QString &test);
+    QString programKeycode(const QString &step) const;
     double parseEntry() const;
     bool hasPendingEntry() const;
     void commitEntry();
