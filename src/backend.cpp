@@ -106,28 +106,37 @@ QString Backend::recordableKey(const QString &key) const {
     const bool isG = (m_prefix == Prefix::g);
     const bool isSto = (m_prefix == Prefix::STO);
     const bool isRcl = (m_prefix == Prefix::RCL);
+    const bool hasRclG = isRcl && m_secondaryPrefix == Prefix::g;
+    const bool hasStoG = isSto && m_secondaryPrefix == Prefix::g;
 
     if (key == QStringLiteral("n")) {
+        if (hasRclG) return QStringLiteral("RCL 12x");
+        if (hasStoG) return QStringLiteral("STO 12x");
         if (isF) return QStringLiteral("CLEAR FIN");
         if (isG) return QStringLiteral("12x");
         return key;
     }
     if (key == QStringLiteral("i")) {
+        if (hasRclG) return QStringLiteral("RCL 12÷");
+        if (hasStoG) return QStringLiteral("STO 12÷");
         if (isF) return QStringLiteral("INT");
         if (isG) return QStringLiteral("12÷");
         return key;
     }
     if (key == QStringLiteral("PV")) {
+        if (hasRclG) return QStringLiteral("RCL CFo");
         if (isF) return QStringLiteral("NPV");
         if (isG) return QStringLiteral("CFo");
         return key;
     }
     if (key == QStringLiteral("PMT")) {
+        if (hasRclG) return QStringLiteral("RCL CFj");
         if (isF) return QStringLiteral("AMORT");
         if (isG) return QStringLiteral("CFj");
         return key;
     }
     if (key == QStringLiteral("FV")) {
+        if (hasRclG) return QStringLiteral("RCL Nj");
         if (isF) return QStringLiteral("IRR");
         if (isG) return QStringLiteral("Nj");
         return key;
@@ -138,14 +147,10 @@ QString Backend::recordableKey(const QString &key) const {
     }
     if (key == QStringLiteral("7")) {
         if (isG) return QStringLiteral("BEG");
-        if (isRcl) return QStringLiteral("RCL 12x");
-        if (isSto) return QStringLiteral("STO 12x");
         return key;
     }
     if (key == QStringLiteral("8")) {
         if (isG) return QStringLiteral("END");
-        if (isRcl) return QStringLiteral("RCL 12÷");
-        if (isSto) return QStringLiteral("STO 12÷");
         return key;
     }
     if (key == QStringLiteral("9")) {
@@ -285,6 +290,9 @@ void Backend::pressKey(const QString &key) {
     if (m_programMode) {
         if (key == QStringLiteral("ON")) {
             pressClear();
+        } else if ((m_prefix == Prefix::RCL || m_prefix == Prefix::STO) &&
+                   (key == QStringLiteral("f") || key == QStringLiteral("g"))) {
+            m_secondaryPrefix = (key == QStringLiteral("f")) ? Prefix::f : Prefix::g;
         } else if (key == QStringLiteral("f") || key == QStringLiteral("g") ||
                    key == QStringLiteral("STO") || key == QStringLiteral("RCL") ||
                    key == QStringLiteral("GTO")) {
@@ -302,6 +310,7 @@ void Backend::pressKey(const QString &key) {
         } else if (m_prefix != Prefix::None) {
             recordStep(recordableKey(key));
             m_prefix = Prefix::None;
+            m_secondaryPrefix = Prefix::None;
         } else if (key == QStringLiteral("R/S")) {
             recordStep(QStringLiteral("R/S"));
         } else {
@@ -318,7 +327,14 @@ void Backend::pressKey(const QString &key) {
     }
 
     if (m_prefix != Prefix::None) {
+        if ((m_prefix == Prefix::RCL || m_prefix == Prefix::STO) &&
+            (key == QStringLiteral("f") || key == QStringLiteral("g"))) {
+            m_secondaryPrefix = (key == QStringLiteral("f")) ? Prefix::f : Prefix::g;
+            emit stateChanged();
+            return;
+        }
         executePrefixedKey(key);
+        m_secondaryPrefix = Prefix::None;
         emit stateChanged();
         return;
     }
@@ -491,6 +507,28 @@ void Backend::pressKey(const QString &key) {
         commitEntry(); m_n = currentX() * 12.0; m_entryReplace = true;
     } else if (key == QStringLiteral("STO 12÷")) {
         commitEntry(); m_i = currentX() / 12.0; m_entryReplace = true;
+    } else if (key == QStringLiteral("RCL CFo")) {
+        liftStack();
+        m_stack[0] = m_cashFlows.empty() ? 0 : m_cashFlows[0];
+        m_entryReplace = true;
+    } else if (key == QStringLiteral("RCL CFj")) {
+        commitEntry();
+        const int idx = static_cast<int>(m_stack[0]);
+        liftStack();
+        if (idx >= 0 && idx < static_cast<int>(m_cashFlows.size()))
+            m_stack[0] = m_cashFlows[idx];
+        else
+            m_error = true;
+        m_entryReplace = true;
+    } else if (key == QStringLiteral("RCL Nj")) {
+        commitEntry();
+        const int idx = static_cast<int>(m_stack[0]);
+        liftStack();
+        if (idx >= 0 && idx < static_cast<int>(m_cashFlowCounts.size()))
+            m_stack[0] = m_cashFlowCounts[idx];
+        else
+            m_error = true;
+        m_entryReplace = true;
     } else if (key.startsWith(QStringLiteral("RCL "))) {
         const QString sub = key.mid(4);
         pressRecallKey(sub);
@@ -766,6 +804,16 @@ void Backend::pressRecallKey(const QString &key) {
 }
 
 void Backend::executePrefixedKey(const QString &key) {
+    // RCL/STO followed by a function key (f or g) is a combined command.
+    if (m_secondaryPrefix != Prefix::None &&
+        (m_prefix == Prefix::RCL || m_prefix == Prefix::STO)) {
+        const QString action = recordableKey(key);
+        m_prefix = Prefix::None;
+        m_secondaryPrefix = Prefix::None;
+        pressKey(action);
+        return;
+    }
+
     if (m_prefix == Prefix::STO || m_prefix == Prefix::STOop) {
         pressStorageKey(key);
         return;
@@ -1420,27 +1468,135 @@ void Backend::computeFutureDate() {
 }
 
 // Bonds (simplified).
+namespace {
+// 30/360 US day count (used by HP-12C for bonds).
+int days360(const QDate &start, const QDate &end) {
+    int d1 = start.day();
+    int m1 = start.month();
+    int y1 = start.year();
+    int d2 = end.day();
+    int m2 = end.month();
+    int y2 = end.year();
+
+    if (d1 == 31) d1 = 30;
+    if (d2 == 31 && d1 == 30) d2 = 30;
+
+    return 360 * (y2 - y1) + 30 * (m2 - m1) + (d2 - d1);
+}
+
+QDate addMonths360(const QDate &date, int months) {
+    int y = date.year();
+    int m = date.month() + months;
+    y += (m - 1) / 12;
+    m = ((m - 1) % 12) + 1;
+    int d = date.day();
+    if (d > 28) {
+        QDate candidate(y, m, 1);
+        d = std::min(d, candidate.daysInMonth());
+    }
+    return QDate(y, m, d);
+}
+
+QDate nextCouponDate(const QDate &settlement, const QDate &maturity, bool &ok) {
+    ok = false;
+    if (!settlement.isValid() || !maturity.isValid())
+        return QDate();
+
+    // Maturity is always a coupon date; work backwards in 6-month steps.
+    QDate coupon = maturity;
+    while (coupon > settlement) {
+        coupon = addMonths360(coupon, -6);
+    }
+
+    if (coupon == settlement) {
+        coupon = addMonths360(coupon, 6);
+    } else if (coupon < settlement) {
+        coupon = addMonths360(coupon, 6);
+    }
+
+    if (coupon > maturity)
+        return QDate();
+
+    ok = true;
+    return coupon;
+}
+
+QDate previousCouponDate(const QDate &nextCoupon, const QDate &maturity) {
+    if (nextCoupon == maturity)
+        return addMonths360(nextCoupon, -6);
+    return addMonths360(nextCoupon, -6);
+}
+
+int countCoupons(const QDate &firstCoupon, const QDate &maturity) {
+    int count = 0;
+    QDate d = firstCoupon;
+    while (d <= maturity) {
+        ++count;
+        d = addMonths360(d, 6);
+    }
+    return count;
+}
+}
+
+// Bond price with 30/360 day count and semiannual coupons.
 double Backend::bondPrice() const {
-    const double periods = std::floor(m_n * 2.0);
-    if (nearZero(periods)) return 0;
+    const QDate settlement = parseDate(m_stack[0]);
+    const QDate maturity = parseDate(m_stack[1]);
+    if (!settlement.isValid() || !maturity.isValid()) { return 0; }
+
+    bool ok = false;
+    const QDate nextCoupon = nextCouponDate(settlement, maturity, ok);
+    if (!ok) return 0;
+
+    const QDate prevCoupon = previousCouponDate(nextCoupon, maturity);
+    const int dsc = days360(settlement, nextCoupon);
+    const int e = days360(prevCoupon, nextCoupon);
+    if (e <= 0) return 0;
+
+    const int n = countCoupons(nextCoupon, maturity);
+    const double c = m_pmt / 200.0;  // annual percent -> semiannual decimal
     const double y = m_i / 200.0;
-    const double c = m_pmt / 2.0;
-    if (nearZero(y)) return 100.0 + c * periods;
-    const double discount = std::pow(1.0 + y, -periods);
-    const double couponPv = c * (1.0 - discount) / y;
-    return 100.0 * discount + couponPv;
+    if (nearZero(y)) return 100.0 + c * (n + double(dsc) / e);
+
+    const double periods = n + double(dsc) / e;
+    const double base = std::pow(1.0 + y, -periods);
+    const double dirty = 100.0 * base + (c / y) * (1.0 - base);
+    const double accrued = c * double(e - dsc) / e;
+    return dirty - accrued;
 }
 
 double Backend::bondYield() const {
+    const QDate settlement = parseDate(m_stack[0]);
+    const QDate maturity = parseDate(m_stack[1]);
+    if (!settlement.isValid() || !maturity.isValid()) { return 0; }
+
+    bool ok = false;
+    const QDate nextCoupon = nextCouponDate(settlement, maturity, ok);
+    if (!ok) return 0;
+
+    const QDate prevCoupon = previousCouponDate(nextCoupon, maturity);
+    const int dsc = days360(settlement, nextCoupon);
+    const int e = days360(prevCoupon, nextCoupon);
+    if (e <= 0) return 0;
+
+    const int n = countCoupons(nextCoupon, maturity);
+    const double c = m_pmt / 200.0;
     const double price = currentX();
-    const double periods = std::floor(m_n * 2.0);
-    if (nearZero(periods)) return 0;
-    const double c = m_pmt / 2.0;
     double y = m_i / 200.0;
     if (nearZero(y)) y = 0.05;
+
     for (int iter = 0; iter < 100; ++iter) {
-        const double f = 100.0 * std::pow(1.0 + y, -periods) + c * (1.0 - std::pow(1.0 + y, -periods)) / y - price;
-        const double fPlus = 100.0 * std::pow(1.0 + y + 1e-8, -periods) + c * (1.0 - std::pow(1.0 + y + 1e-8, -periods)) / (y + 1e-8) - price;
+        const double periods = n + double(dsc) / e;
+        const double base = std::pow(1.0 + y, -periods);
+        const double dirty = 100.0 * base + (c / y) * (1.0 - base);
+        const double accrued = c * double(e - dsc) / e;
+        const double f = dirty - accrued - price;
+
+        const double yPlus = y + 1e-8;
+        const double basePlus = std::pow(1.0 + yPlus, -periods);
+        const double dirtyPlus = 100.0 * basePlus + (c / yPlus) * (1.0 - basePlus);
+        const double fPlus = dirtyPlus - accrued - price;
+
         const double df = (fPlus - f) / 1e-8;
         if (nearZero(df)) break;
         const double delta = f / df;

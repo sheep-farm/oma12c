@@ -207,6 +207,7 @@ private:
 
     // Calculator state.
     Prefix m_prefix = Prefix::None;
+    Prefix m_secondaryPrefix = Prefix::None;
     DisplayMode m_displayMode = DisplayMode::FIX;
     int m_displayDigits = 2;
     bool m_beginMode = false;
