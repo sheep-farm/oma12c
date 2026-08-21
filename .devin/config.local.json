@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Exec(./bin/test)",
+      "Exec(QT_LOGGING_RULES=\"qt.*=true\" ./bin/test)",
+      "Exec(./bin/build)",
+      "Exec(./build/oma12c)",
+      "Exec(build/oma12c)",
+      "Exec(g++)",
+      "Exec(qmake6)",
+      "Exec(make check)",
+      "Exec(make)",
+      "Exec(nproc)",
+      "Exec(./tst_oma12c)"
+    ]
+  }
+}
