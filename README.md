@@ -10,7 +10,7 @@ Run the included install script:
 bin/install
 ```
 
-This builds the project and copies the `oma12c` binary to `~/.local/bin`.
+This builds the project, copies the `oma12c` binary to `~/.local/bin`, and adds an Omarchy/Hyprland window rule so the calculator launches floating, centered and with a fixed size.
 
 ## Usage
 
