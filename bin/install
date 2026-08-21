@@ -57,7 +57,7 @@ install() {
     # Configure Omarchy (Hyprland) to float and center oma12c on launch.
     HYPR_FILE="$HOME/.config/hypr/hyprland.lua"
     if [ -f "$HYPR_FILE" ]; then
-        RULE='o.window("oma12c", { float = true, center = true, size = { 1100, 650 } })'
+        RULE='o.window("oma12c", { float = true, center = true, size = { 940, 560 } })'
         if grep -q 'o.window("oma12c"' "$HYPR_FILE"; then
             sed -i "/o.window(\"oma12c\"/c\\$RULE" "$HYPR_FILE"
             echo "Updated Omarchy window rule in $HYPR_FILE"
