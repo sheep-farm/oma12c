@@ -116,6 +116,7 @@ private:
     void swapXY();
     void lastXToX();
     double currentX() const;
+    double hp12cRound(double value) const;
 
     // Programming.
     QString recordableKey(const QString &key) const;

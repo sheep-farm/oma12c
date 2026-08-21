@@ -147,6 +147,16 @@ private slots:
         QCOMPARE(calc.display(), QStringLiteral("3.3333"));
     }
 
+    void hp12cPrecision() {
+        Backend calc;
+        // HP-12C BCD: 1/3 = 0.3333333333, then * 3 = 0.9999999999
+        press(calc, "1 ENTER 3 ÷");
+        QVERIFY(std::abs(calc.x() - 0.3333333333) < 1e-10);
+
+        press(calc, "3 ×");
+        QVERIFY(std::abs(calc.x() - 0.9999999999) < 1e-10);
+    }
+
 private:
     QTemporaryDir m_settingsDirectory;
 };

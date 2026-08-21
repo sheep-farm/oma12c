@@ -722,9 +722,9 @@ void Backend::pressOperator(const QString &op) {
 
     if (!std::isfinite(result)) { m_error = true; return; }
 
-    m_lastX = x;
+    m_lastX = hp12cRound(x);
     dropStack();
-    m_stack[0] = result;
+    m_stack[0] = hp12cRound(result);
     m_entryReplace = true;
 }
 
@@ -765,7 +765,7 @@ void Backend::pressStorageKey(const QString &key) {
     if (m_prefix == Prefix::STO) {
         if (isNumberKey(key)) {
             const int reg = key.toInt();
-            m_storageRegisters[reg] = currentX();
+            m_storageRegisters[reg] = hp12cRound(currentX());
             commitEntry();
             m_entryReplace = true;
             m_prefix = Prefix::None;
@@ -773,23 +773,23 @@ void Backend::pressStorageKey(const QString &key) {
                    key == QStringLiteral("×") || key == QStringLiteral("÷")) {
             m_prefix = Prefix::STOop;
             m_stoOp = key;
-        } else if (key == QStringLiteral("n")) { m_n = currentX(); commitEntry(); m_prefix = Prefix::None; m_entryReplace = true; }
-        else if (key == QStringLiteral("i")) { m_i = currentX(); commitEntry(); m_prefix = Prefix::None; m_entryReplace = true; }
-        else if (key == QStringLiteral("PV")) { m_pv = currentX(); commitEntry(); m_prefix = Prefix::None; m_entryReplace = true; }
-        else if (key == QStringLiteral("PMT")) { m_pmt = currentX(); commitEntry(); m_prefix = Prefix::None; m_entryReplace = true; }
-        else if (key == QStringLiteral("FV")) { m_fv = currentX(); commitEntry(); m_prefix = Prefix::None; m_entryReplace = true; }
+        } else if (key == QStringLiteral("n")) { m_n = hp12cRound(currentX()); commitEntry(); m_prefix = Prefix::None; m_entryReplace = true; }
+        else if (key == QStringLiteral("i")) { m_i = hp12cRound(currentX()); commitEntry(); m_prefix = Prefix::None; m_entryReplace = true; }
+        else if (key == QStringLiteral("PV")) { m_pv = hp12cRound(currentX()); commitEntry(); m_prefix = Prefix::None; m_entryReplace = true; }
+        else if (key == QStringLiteral("PMT")) { m_pmt = hp12cRound(currentX()); commitEntry(); m_prefix = Prefix::None; m_entryReplace = true; }
+        else if (key == QStringLiteral("FV")) { m_fv = hp12cRound(currentX()); commitEntry(); m_prefix = Prefix::None; m_entryReplace = true; }
     } else if (m_prefix == Prefix::STOop) {
         if (isNumberKey(key)) {
             const int reg = key.toInt();
             const double current = m_storageRegisters[reg];
-            const double x = currentX();
+            const double x = hp12cRound(currentX());
             double result = 0;
-            if (m_stoOp == QStringLiteral("+")) result = current + x;
-            else if (m_stoOp == QStringLiteral("−")) result = current - x;
-            else if (m_stoOp == QStringLiteral("×")) result = current * x;
+            if (m_stoOp == QStringLiteral("+")) result = hp12cRound(current + x);
+            else if (m_stoOp == QStringLiteral("−")) result = hp12cRound(current - x);
+            else if (m_stoOp == QStringLiteral("×")) result = hp12cRound(current * x);
             else if (m_stoOp == QStringLiteral("÷")) {
                 if (nearZero(x)) { m_error = true; return; }
-                result = current / x;
+                result = hp12cRound(current / x);
             }
             m_storageRegisters[reg] = result;
             commitEntry();
@@ -813,6 +813,7 @@ void Backend::pressRecallKey(const QString &key) {
     else if (key == QStringLiteral("PV")) { liftStack(); m_stack[0] = m_pv; }
     else if (key == QStringLiteral("PMT")) { liftStack(); m_stack[0] = m_pmt; }
     else if (key == QStringLiteral("FV")) { liftStack(); m_stack[0] = m_fv; }
+    m_stack[0] = hp12cRound(m_stack[0]);
     m_prefix = Prefix::None;
     m_entryReplace = true;
 }
@@ -975,6 +976,27 @@ double Backend::currentX() const {
     return m_stack[0];
 }
 
+// HP-12C uses 10-digit BCD arithmetic.  Round a value to 10 significant digits
+// so that intermediate and final results match the real calculator's precision.
+double Backend::hp12cRound(double value) const {
+    if (!std::isfinite(value) || nearZero(value))
+        return value;
+
+    const int sign = value < 0 ? -1 : 1;
+    double absVal = std::abs(value);
+
+    int exp = static_cast<int>(std::floor(std::log10(absVal)));
+    double factor = std::pow(10.0, 9 - exp);
+    double rounded = std::round(absVal * factor) / factor;
+
+    // Guard against rounding producing a value like 9.999999999 due to binary
+    // representation; re-round when the value is close to a power of 10.
+    if (std::abs(rounded * 10.0 - std::round(rounded * 10.0)) < 1e-14)
+        rounded = std::round(rounded * 10.0) / 10.0;
+
+    return sign * rounded;
+}
+
 double Backend::parseEntry() const {
     if (m_entry.isEmpty())
         return m_stack[0];
@@ -1045,12 +1067,12 @@ void Backend::lastXToX() {
 }
 
 void Backend::percent() {
-    const double x = currentX();
+    const double x = hp12cRound(currentX());
     commitEntry();
     const double y = m_stack[1];
     const double result = y * x / 100.0;
     liftStack();
-    m_stack[0] = result;
+    m_stack[0] = hp12cRound(result);
     m_lastX = x;
     m_entryReplace = true;
 }
@@ -1063,7 +1085,7 @@ void Backend::percentChange() {
     const double result = (x - y) / y * 100.0;
     m_lastX = x;
     dropStack();
-    m_stack[0] = result;
+    m_stack[0] = hp12cRound(result);
     m_entryReplace = true;
 }
 
@@ -1075,17 +1097,17 @@ void Backend::percentTotal() {
     const double result = x / y * 100.0;
     m_lastX = x;
     dropStack();
-    m_stack[0] = result;
+    m_stack[0] = hp12cRound(result);
     m_entryReplace = true;
 }
 
 void Backend::simpleInterest() {
     const double principal = m_stack[1];
     const double rate = currentX() / 100.0;
-    const double interest = principal * rate * (m_n / 12.0);
+    const double interest = hp12cRound(principal * rate * (m_n / 12.0));
     liftStack();
     m_stack[0] = interest;
-    m_stack[1] = principal + interest;
+    m_stack[1] = hp12cRound(principal + interest);
     m_entryReplace = true;
 }
 
@@ -1122,12 +1144,12 @@ void Backend::accumulateSigma(bool add) {
     const double y = m_stack[1];
     const double sign = add ? 1.0 : -1.0;
 
-    m_storageRegisters[1] += sign;
-    m_storageRegisters[2] += sign * x;
-    m_storageRegisters[3] += sign * x * x;
-    m_storageRegisters[4] += sign * y;
-    m_storageRegisters[5] += sign * y * y;
-    m_storageRegisters[6] += sign * x * y;
+    m_storageRegisters[1] = hp12cRound(m_storageRegisters[1] + sign);
+    m_storageRegisters[2] = hp12cRound(m_storageRegisters[2] + sign * x);
+    m_storageRegisters[3] = hp12cRound(m_storageRegisters[3] + sign * x * x);
+    m_storageRegisters[4] = hp12cRound(m_storageRegisters[4] + sign * y);
+    m_storageRegisters[5] = hp12cRound(m_storageRegisters[5] + sign * y * y);
+    m_storageRegisters[6] = hp12cRound(m_storageRegisters[6] + sign * x * y);
 
     m_stack[0] = m_storageRegisters[1];
     m_entryReplace = true;
@@ -1138,7 +1160,7 @@ void Backend::computeMeanX() {
     const double n = m_storageRegisters[1];
     if (nearZero(n)) { m_error = true; return; }
     liftStack();
-    m_stack[0] = m_storageRegisters[2] / n;
+    m_stack[0] = hp12cRound(m_storageRegisters[2] / n);
     m_entryReplace = true;
 }
 
@@ -1151,8 +1173,8 @@ void Backend::computeStdDevS() {
     const double sX = std::sqrt((m_storageRegisters[3] - n * meanX * meanX) / (n - 1));
     const double sY = std::sqrt((m_storageRegisters[5] - n * meanY * meanY) / (n - 1));
     liftStack();
-    m_stack[0] = sY;
-    m_stack[1] = sX;
+    m_stack[0] = hp12cRound(sY);
+    m_stack[1] = hp12cRound(sX);
     m_entryReplace = true;
 }
 
@@ -1169,12 +1191,12 @@ void Backend::linearEstimateX() {
     const double sxx = sumX2 - n * meanX * meanX;
     const double sxy = sumXY - n * meanX * meanY;
     if (nearZero(sxx)) { m_error = true; return; }
-    const double slope = sxy / sxx;
-    const double intercept = meanY - slope * meanX;
+    const double slope = hp12cRound(sxy / sxx);
+    const double intercept = hp12cRound(meanY - slope * meanX);
     const double y = currentX();
     const double result = (y - intercept) / slope;
     liftStack();
-    m_stack[0] = result;
+    m_stack[0] = hp12cRound(result);
     m_entryReplace = true;
 }
 
@@ -1191,8 +1213,8 @@ void Backend::linearEstimateY() {
     const double sxx = sumX2 - n * meanX * meanX;
     const double sxy = sumXY - n * meanX * meanY;
     if (nearZero(sxx)) { m_error = true; return; }
-    const double slope = sxy / sxx;
-    const double intercept = meanY - slope * meanX;
+    const double slope = hp12cRound(sxy / sxx);
+    const double intercept = hp12cRound(meanY - slope * meanX);
     const double x = currentX();
     const double result = intercept + slope * x;
     liftStack();
@@ -1218,7 +1240,7 @@ double Backend::calculateFv() const {
     const double factor = tvmFactor();
     const double annuity = nearZero(rate) ? m_n : (factor - 1.0) / rate;
     const double begin = m_beginMode ? 1.0 + rate : 1.0;
-    return -(m_pv * factor + m_pmt * annuity * begin);
+    return hp12cRound(-(m_pv * factor + m_pmt * annuity * begin));
 }
 
 double Backend::calculatePv() const {
@@ -1226,32 +1248,32 @@ double Backend::calculatePv() const {
     const double factor = tvmFactor();
     const double annuity = nearZero(rate) ? m_n : (factor - 1.0) / rate;
     const double begin = m_beginMode ? 1.0 + rate : 1.0;
-    return -(m_fv + m_pmt * annuity * begin) / factor;
+    return hp12cRound(-(m_fv + m_pmt * annuity * begin) / factor);
 }
 
 double Backend::calculatePmt() const {
     const double rate = m_i / 100.0;
     if (nearZero(rate)) {
-        return -(m_pv + m_fv) / m_n;
+        return hp12cRound(-(m_pv + m_fv) / m_n);
     }
     const double factor = tvmFactor();
     const double annuity = (factor - 1.0) / rate;
     const double begin = m_beginMode ? 1.0 + rate : 1.0;
-    return -(m_pv * factor + m_fv) / (annuity * begin);
+    return hp12cRound(-(m_pv * factor + m_fv) / (annuity * begin));
 }
 
 double Backend::calculateN() const {
     const double rate = m_i / 100.0;
     if (nearZero(rate)) {
         if (nearZero(m_pmt)) { return 0; }
-        return -(m_pv + m_fv) / m_pmt;
+        return hp12cRound(-(m_pv + m_fv) / m_pmt);
     }
     const double pmtBegin = m_beginMode ? m_pmt * (1.0 + rate) : m_pmt;
     const double numerator = pmtBegin - m_fv;
     const double denominator = pmtBegin + m_pv * rate;
     if (nearZero(denominator) || numerator / denominator <= 0)
         return 0;
-    return std::log(numerator / denominator) / std::log(1.0 + rate);
+    return hp12cRound(std::log(numerator / denominator) / std::log(1.0 + rate));
 }
 
 namespace {
@@ -1291,7 +1313,7 @@ double Backend::calculateI() const {
         rate -= delta;
         if (std::abs(delta) < 1e-12) break;
     }
-    return rate * 100.0;
+    return hp12cRound(rate * 100.0);
 }
 
 double Backend::solveTvm(const QString &variable) const {
@@ -1312,11 +1334,11 @@ void Backend::amortize() {
     double totalInterest = 0;
     double totalPrincipal = 0;
     for (int k = 0; k < periods; ++k) {
-        const double interest = balance * rate;
-        const double principal = m_pmt - interest;
-        balance += principal;
-        totalInterest += interest;
-        totalPrincipal += principal;
+        const double interest = hp12cRound(balance * rate);
+        const double principal = hp12cRound(m_pmt - interest);
+        balance = hp12cRound(balance + principal);
+        totalInterest = hp12cRound(totalInterest + interest);
+        totalPrincipal = hp12cRound(totalPrincipal + principal);
     }
     m_pv = balance;
     m_n -= periods;
@@ -1360,7 +1382,7 @@ void Backend::setCashFlowCount() {
 double Backend::computeNpv() const {
     const double rate = m_i / 100.0;
     if (m_cashFlows.empty()) return 0.0;
-    return npvAtRate(rate, m_cashFlows, m_cashFlowCounts);
+    return hp12cRound(npvAtRate(rate, m_cashFlows, m_cashFlowCounts));
 }
 
 double Backend::computeIrr() const {
@@ -1379,7 +1401,7 @@ double Backend::computeIrr() const {
         rate -= delta;
         if (std::abs(delta) < 1e-12) break;
     }
-    return rate * 100.0;
+    return hp12cRound(rate * 100.0);
 }
 
 // Depreciation.
@@ -1388,7 +1410,7 @@ double Backend::straightLineDepreciation() const {
     const double salvage = m_fv;
     const double life = m_n;
     if (nearZero(life)) return 0;
-    return (cost - salvage) / life;
+    return hp12cRound((cost - salvage) / life);
 }
 
 double Backend::sumOfYearsDigitsDepreciation() const {
@@ -1398,7 +1420,7 @@ double Backend::sumOfYearsDigitsDepreciation() const {
     const double year = currentX();
     if (nearZero(life) || year < 1 || year > life) return 0;
     const double sumYears = life * (life + 1) / 2.0;
-    return (cost - salvage) * (life - year + 1) / sumYears;
+    return hp12cRound((cost - salvage) * (life - year + 1) / sumYears);
 }
 
 double Backend::decliningBalanceDepreciation() const {
@@ -1410,7 +1432,7 @@ double Backend::decliningBalanceDepreciation() const {
     const double rate = 2.0 / life;
     const double prevValue = cost * std::pow(1.0 - rate, year - 1);
     const double value = cost * std::pow(1.0 - rate, year);
-    const double dep = prevValue - value;
+    const double dep = hp12cRound(prevValue - value);
     if (value < salvage) return prevValue - salvage;
     return dep;
 }
@@ -1466,7 +1488,7 @@ void Backend::computeDaysBetween() {
     const QDate earlier = parseDate(m_stack[1]);
     if (!later.isValid() || !earlier.isValid()) { m_error = true; return; }
     liftStack();
-    m_stack[0] = earlier.daysTo(later);
+    m_stack[0] = hp12cRound(earlier.daysTo(later));
     m_entryReplace = true;
 }
 
@@ -1576,7 +1598,7 @@ double Backend::bondPrice() const {
     const double base = std::pow(1.0 + y, -periods);
     const double dirty = 100.0 * base + (c / y) * (1.0 - base);
     const double accrued = c * double(e - dsc) / e;
-    return dirty - accrued;
+    return hp12cRound(dirty - accrued);
 }
 
 double Backend::bondYield() const {
@@ -1617,7 +1639,7 @@ double Backend::bondYield() const {
         y -= delta;
         if (std::abs(delta) < 1e-12) break;
     }
-    return y * 200.0;
+    return hp12cRound(y * 200.0);
 }
 
 // Static number parsing.
