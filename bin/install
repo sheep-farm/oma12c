@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -e
+
+# Install oma12c into the Omarchy environment.
+# Builds the application and copies the binary into ~/.local/bin.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+BUILD_DIR="$PROJECT_DIR/build"
+INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
+
+mkdir -p "$BUILD_DIR"
+cd "$BUILD_DIR"
+
+qmake6 "$PROJECT_DIR/oma12c.pro"
+make -j"$(nproc)"
+
+mkdir -p "$INSTALL_DIR"
+cp "$BUILD_DIR/oma12c" "$INSTALL_DIR/oma12c"
+
+echo "oma12c installed to $INSTALL_DIR/oma12c"

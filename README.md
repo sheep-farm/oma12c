@@ -4,7 +4,13 @@ A reverse-Polish-notation (RPN) financial calculator inspired by the legendary H
 
 ## Install
 
-Install via the Omarchy Package Repository via the `oma12c` package.
+Run the included install script:
+
+```bash
+bin/install
+```
+
+This builds the project and copies the `oma12c` binary to `~/.local/bin`.
 
 ## Usage
 
