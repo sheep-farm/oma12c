@@ -317,9 +317,15 @@ void Backend::pressKey(const QString &key) {
         } else if (m_prefix == Prefix::GTO) {
             pressGtoDigit(key);
         } else if (m_prefix != Prefix::None) {
-            recordStep(recordableKey(key));
-            m_prefix = Prefix::None;
-            m_secondaryPrefix = Prefix::None;
+            if (m_prefix == Prefix::f && key == QStringLiteral("R/S")) {
+                m_programMode = !m_programMode;
+                m_prefix = Prefix::None;
+                m_secondaryPrefix = Prefix::None;
+            } else {
+                recordStep(recordableKey(key));
+                m_prefix = Prefix::None;
+                m_secondaryPrefix = Prefix::None;
+            }
         } else if (key == QStringLiteral("R/S")) {
             recordStep(QStringLiteral("R/S"));
         } else {
@@ -858,6 +864,7 @@ void Backend::executePrefixedKey(const QString &key) {
     }
 
     const bool isF = (m_prefix == Prefix::f);
+    const bool isG = (m_prefix == Prefix::g);
     m_prefix = Prefix::None;
 
     if (key == QStringLiteral("n")) {
@@ -876,10 +883,10 @@ void Backend::executePrefixedKey(const QString &key) {
         if (isF) { liftStack(); m_stack[0] = computeIrr(); m_entryReplace = true; }
         else setCashFlowCount();
     } else if (key == QStringLiteral("y^x")) {
-        if (isF) { liftStack(); m_stack[0] = bondPrice(); m_entryReplace = true; }
+        if (isF) { m_stack[0] = bondPrice(); m_entryReplace = true; }
         else pressOperator(QStringLiteral("√x"));
     } else if (key == QStringLiteral("1/x")) {
-        if (isF) { liftStack(); m_stack[0] = bondYield(); m_entryReplace = true; }
+        if (isF) { m_stack[0] = bondYield(); m_entryReplace = true; }
         else pressOperator(QStringLiteral("e^x"));
     } else if (key == QStringLiteral("%T")) {
         if (isF) { liftStack(); m_stack[0] = straightLineDepreciation(); m_entryReplace = true; }
@@ -918,6 +925,9 @@ void Backend::executePrefixedKey(const QString &key) {
     } else if (key == QStringLiteral("EEX")) {
         if (isF) pressOperator(QStringLiteral("FRAC"));
         else computeDaysBetween();
+    } else if (key == QStringLiteral(".")) {
+        if (isF) m_displayMode = DisplayMode::SCI;
+        else if (isG) m_displayMode = DisplayMode::ENG;
     } else if (isNumberKey(key)) {
         if (isF) {
             m_displayDigits = key.toInt();
@@ -1102,8 +1112,8 @@ void Backend::percentTotal() {
 }
 
 void Backend::simpleInterest() {
-    const double principal = m_stack[1];
-    const double rate = currentX() / 100.0;
+    const double principal = m_pv;
+    const double rate = m_i / 100.0;
     const double interest = hp12cRound(principal * rate * (m_n / 12.0));
     liftStack();
     m_stack[0] = interest;
@@ -1521,16 +1531,17 @@ int days360(const QDate &start, const QDate &end) {
 }
 
 QDate addMonths360(const QDate &date, int months) {
-    int y = date.year();
-    int m = date.month() + months;
-    y += (m - 1) / 12;
-    m = ((m - 1) % 12) + 1;
+    const int total = date.month() + months - 1;
+    int y = date.year() + static_cast<int>(std::floor(total / 12.0));
+    int m = ((total % 12) + 12) % 12 + 1;
     int d = date.day();
     if (d > 28) {
         QDate candidate(y, m, 1);
         d = std::min(d, candidate.daysInMonth());
     }
-    return QDate(y, m, d);
+    const QDate result(y, m, d);
+    Q_ASSERT(result.isValid());
+    return result;
 }
 
 QDate nextCouponDate(const QDate &settlement, const QDate &maturity, bool &ok) {
@@ -1602,8 +1613,8 @@ double Backend::bondPrice() const {
 }
 
 double Backend::bondYield() const {
-    const QDate settlement = parseDate(m_stack[0]);
-    const QDate maturity = parseDate(m_stack[1]);
+    const QDate settlement = parseDate(m_stack[1]);
+    const QDate maturity = parseDate(m_stack[2]);
     if (!settlement.isValid() || !maturity.isValid()) { return 0; }
 
     bool ok = false;
@@ -1886,7 +1897,11 @@ void Backend::recordStep(const QString &key) {
 void Backend::executeProgram() {
     if (m_programRunning) { m_programRunning = false; return; }
     m_programRunning = true;
+    if (m_programCounter >= static_cast<int>(m_programSteps.size()))
+        m_programCounter = 0;
+    int iterations = 0;
     while (m_programRunning && m_programCounter < static_cast<int>(m_programSteps.size())) {
+        if (++iterations > 1000) { m_error = true; m_programRunning = false; break; }
         const QString step = m_programSteps[m_programCounter];
         ++m_programCounter;
 
@@ -1917,6 +1932,9 @@ void Backend::executeProgram() {
         }
 
         pressKey(step);
+
+        if (hasPendingEntry())
+            commitEntry();
 
         if (step == QStringLiteral("PSE")) {
             m_programRunning = false;
