@@ -120,6 +120,7 @@ private:
     // Programming.
     QString recordableKey(const QString &key) const;
     void recordStep(const QString &key);
+    void pressGtoDigit(const QString &key);
     void executeProgram();
     void singleStep();
     void goToStep(int step);
@@ -215,6 +216,7 @@ private:
     bool m_programMode = false;
     bool m_error = false;
     QString m_stoOp;
+    int m_gtoFirstDigit = -1;
 
     // Program memory.
     std::vector<QString> m_programSteps;

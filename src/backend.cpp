@@ -65,8 +65,11 @@ QString Backend::display() const {
         return QStringLiteral("STO");
     if (m_prefix == Prefix::RCL)
         return QStringLiteral("RCL");
-    if (m_prefix == Prefix::GTO)
+    if (m_prefix == Prefix::GTO) {
+        if (m_gtoFirstDigit >= 0)
+            return QStringLiteral("GTO ") + QString::number(m_gtoFirstDigit);
         return QStringLiteral("GTO");
+    }
 
     if (m_programMode) {
         if (m_programCounter < static_cast<int>(m_programSteps.size()))
@@ -307,6 +310,8 @@ void Backend::pressKey(const QString &key) {
         } else if (key == QStringLiteral("BST")) {
             if (m_programCounter > 0)
                 --m_programCounter;
+        } else if (m_prefix == Prefix::GTO) {
+            pressGtoDigit(key);
         } else if (m_prefix != Prefix::None) {
             recordStep(recordableKey(key));
             m_prefix = Prefix::None;
@@ -327,6 +332,11 @@ void Backend::pressKey(const QString &key) {
     }
 
     if (m_prefix != Prefix::None) {
+        if (m_prefix == Prefix::GTO) {
+            pressGtoDigit(key);
+            emit stateChanged();
+            return;
+        }
         if ((m_prefix == Prefix::RCL || m_prefix == Prefix::STO) &&
             (key == QStringLiteral("f") || key == QStringLiteral("g"))) {
             m_secondaryPrefix = (key == QStringLiteral("f")) ? Prefix::f : Prefix::g;
@@ -1814,6 +1824,30 @@ void Backend::loadDisplaySettings() {
 }
 
 // Programming.
+void Backend::pressGtoDigit(const QString &key) {
+    if (!isNumberKey(key)) {
+        m_prefix = Prefix::None;
+        m_gtoFirstDigit = -1;
+        return;
+    }
+
+    if (m_gtoFirstDigit < 0) {
+        m_gtoFirstDigit = key.toInt();
+        return;
+    }
+
+    const int target = m_gtoFirstDigit * 10 + key.toInt();
+    m_gtoFirstDigit = -1;
+    m_prefix = Prefix::None;
+
+    if (m_programMode) {
+        recordStep(QStringLiteral("GTO"));
+        recordStep(QString::number(target));
+    } else {
+        goToStep(target);
+    }
+}
+
 void Backend::recordStep(const QString &key) {
     if (m_programCounter >= 100) { m_error = true; return; }
     if (m_programCounter >= static_cast<int>(m_programSteps.size()))
