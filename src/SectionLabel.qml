@@ -1,6 +1,7 @@
 import QtQuick
+import QtQuick.Layouts
 
-// Thin section header used above the HP-12C keypad groups.
+// Thin section header used inside the HP-12C keypad grid.
 Rectangle {
     id: control
 
@@ -9,6 +10,8 @@ Rectangle {
     property color pageColor: "#101010"
 
     color: "transparent"
+    Layout.fillWidth: true
+    Layout.fillHeight: true
 
     Text {
         anchors.horizontalCenter: parent.horizontalCenter
@@ -27,8 +30,8 @@ Rectangle {
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.leftMargin: parent.width * 0.05
-        anchors.rightMargin: parent.width * 0.05
+        anchors.leftMargin: Math.min(parent.width * 0.05, 6)
+        anchors.rightMargin: Math.min(parent.width * 0.05, 6)
         height: Math.max(1, Math.round(parent.height * 0.08))
         color: control.inkColor
         opacity: 0.12
