@@ -179,14 +179,47 @@ ApplicationWindow {
             }
         }
 
+        // Section labels above the main keypad groups.
+        Row {
+            id: sectionLabels
+            anchors.top: displayArea.bottom
+            anchors.topMargin: win.scaledSize(6)
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: win.scaledSize(20)
+            spacing: win.scaledSize(10)
+
+            SectionLabel {
+                width: (sectionLabels.width - 2 * sectionLabels.spacing) * 2 / 10
+                height: sectionLabels.height
+                text: "BOND"
+                inkColor: win.inkColor
+                pageColor: win.pageColor
+            }
+            SectionLabel {
+                width: (sectionLabels.width - 2 * sectionLabels.spacing) * 3 / 10
+                height: sectionLabels.height
+                text: "DEPRECIATION"
+                inkColor: win.inkColor
+                pageColor: win.pageColor
+            }
+            SectionLabel {
+                width: (sectionLabels.width - 2 * sectionLabels.spacing) * 5 / 10
+                height: sectionLabels.height
+                text: "CLEAR"
+                inkColor: win.inkColor
+                pageColor: win.pageColor
+            }
+        }
+
         // HP-12C classic 4x10 keypad with a double-height ENTER key.
         GridLayout {
             id: keypad
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
-            anchors.top: displayArea.bottom
-            anchors.topMargin: win.scaledSize(18)
+            anchors.top: sectionLabels.bottom
+            anchors.topMargin: win.scaledSize(10)
             columns: 10
             rowSpacing: win.scaledSize(10)
             columnSpacing: win.scaledSize(10)
