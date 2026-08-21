@@ -14,6 +14,8 @@ bin/install
 
 This builds the project, copies the `oma12c` binary to `~/.local/bin`, and adds an Omarchy/Hyprland window rule so the calculator launches floating, centered and with a fixed size.
 
+To uninstall, run `bin/install uninstall`.
+
 ## Usage
 
 OMA12C follows the classic 4-level RPN stack of the HP-12C:
