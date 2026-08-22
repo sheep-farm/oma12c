@@ -148,4 +148,13 @@ Rectangle {
         hoverEnabled: true
         onClicked: control.activated()
     }
+
+    // Touch handler for mobile platforms; kept alongside MouseArea so both
+    // mouse and touch input work correctly on desktop and Android.
+    TapHandler {
+        id: tapHandler
+        acceptedButtons: Qt.LeftButton | Qt.NoButton
+        gesturePolicy: TapHandler.WithinBounds
+        onTapped: control.activated()
+    }
 }
