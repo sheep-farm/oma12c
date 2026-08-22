@@ -1,6 +1,6 @@
 QT += core gui qml quick quickcontrols2
 
-linux: QT += dbus
+linux:!android: QT += dbus
 
 CONFIG += c++17 release
 TARGET = oma12c
