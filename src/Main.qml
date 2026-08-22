@@ -186,97 +186,74 @@ ApplicationWindow {
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             anchors.top: displayArea.bottom
-            anchors.topMargin: win.scaledSize(10)
+            anchors.topMargin: win.scaledSize(18)
             columns: 10
-            rowSpacing: win.scaledSize(8)
+            rowSpacing: win.scaledSize(10)
             columnSpacing: win.scaledSize(10)
 
             Repeater {
                 model: [
-                    // Section labels row.
-                    { r: 0, c: 0, cs: 2, label: "BOND", kind: "section" },
-                    { r: 0, c: 2, cs: 3, label: "DEPRECIATION", kind: "section" },
+                    // Row 0
+                    { r: 0, c: 0, label: "n", f: "AMORT", g: "12x", key: "n" },
+                    { r: 0, c: 1, label: "i", f: "INT", g: "12÷", key: "i" },
+                    { r: 0, c: 2, label: "PV", f: "NPV", g: "CFo", key: "PV" },
+                    { r: 0, c: 3, label: "PMT", f: "RND", g: "CFj", key: "PMT" },
+                    { r: 0, c: 4, label: "FV", f: "IRR", g: "Nj", key: "FV" },
+                    { r: 0, c: 5, label: "CHS", f: "", g: "DATE", key: "CHS" },
+                    { r: 0, c: 6, label: "7", f: "", g: "BEG", key: "7" },
+                    { r: 0, c: 7, label: "8", f: "", g: "END", key: "8" },
+                    { r: 0, c: 8, label: "9", f: "", g: "MEM", key: "9" },
+                    { r: 0, c: 9, label: "÷", f: "", g: "", key: "÷" },
 
                     // Row 1
-                    { r: 1, c: 0, label: "n", f: "AMORT", g: "12x", key: "n" },
-                    { r: 1, c: 1, label: "i", f: "INT", g: "12÷", key: "i" },
-                    { r: 1, c: 2, label: "PV", f: "NPV", g: "CFo", key: "PV" },
-                    { r: 1, c: 3, label: "PMT", f: "RND", g: "CFj", key: "PMT" },
-                    { r: 1, c: 4, label: "FV", f: "IRR", g: "Nj", key: "FV" },
-                    { r: 1, c: 5, label: "CHS", f: "", g: "DATE", key: "CHS" },
-                    { r: 1, c: 6, label: "7", f: "", g: "BEG", key: "7" },
-                    { r: 1, c: 7, label: "8", f: "", g: "END", key: "8" },
-                    { r: 1, c: 8, label: "9", f: "", g: "MEM", key: "9" },
-                    { r: 1, c: 9, label: "÷", f: "", g: "", key: "÷" },
-
-                    // Section labels row.
-                    { r: 2, c: 1, cs: 4, label: "CLEAR", kind: "section" },
+                    { r: 1, c: 0, label: "y^x", f: "PRICE", g: "√x", key: "y^x" },
+                    { r: 1, c: 1, label: "1/x", f: "YTM", g: "e^x", key: "1/x" },
+                    { r: 1, c: 2, label: "%T", f: "SL", g: "LN", key: "%T" },
+                    { r: 1, c: 3, label: "Δ%", f: "SOYD", g: "FRAC", key: "Δ%" },
+                    { r: 1, c: 4, label: "%", f: "DB", g: "INTG", key: "%" },
+                    { r: 1, c: 5, label: "EEX", f: "FRAC", g: "ΔDYS", key: "EEX" },
+                    { r: 1, c: 6, label: "4", f: "", g: "D.MY", key: "4" },
+                    { r: 1, c: 7, label: "5", f: "", g: "M.DY", key: "5" },
+                    { r: 1, c: 8, label: "6", f: "", g: "x↔w", key: "6" },
+                    { r: 1, c: 9, label: "×", f: "", g: "", key: "×" },
 
                     // Row 2
-                    { r: 3, c: 0, label: "y^x", f: "PRICE", g: "√x", key: "y^x" },
-                    { r: 3, c: 1, label: "1/x", f: "YTM", g: "e^x", key: "1/x" },
-                    { r: 3, c: 2, label: "%T", f: "SL", g: "LN", key: "%T" },
-                    { r: 3, c: 3, label: "Δ%", f: "SOYD", g: "FRAC", key: "Δ%" },
-                    { r: 3, c: 4, label: "%", f: "DB", g: "INTG", key: "%" },
-                    { r: 3, c: 5, label: "EEX", f: "FRAC", g: "ΔDYS", key: "EEX" },
-                    { r: 3, c: 6, label: "4", f: "", g: "D.MY", key: "4" },
-                    { r: 3, c: 7, label: "5", f: "", g: "M.DY", key: "5" },
-                    { r: 3, c: 8, label: "6", f: "", g: "x↔w", key: "6" },
-                    { r: 3, c: 9, label: "×", f: "", g: "", key: "×" },
+                    { r: 2, c: 0, label: "R/S", f: "P/R", g: "PSE", key: "R/S" },
+                    { r: 2, c: 1, label: "SST", f: "Σ", g: "BST", key: "SST" },
+                    { r: 2, c: 2, label: "R↓", f: "PRGM", g: "GTO", key: "R↓" },
+                    { r: 2, c: 3, label: "x<>y", f: "FIN", g: "x≤y", key: "x<>y" },
+                    { r: 2, c: 4, label: "CLx", f: "REG", g: "x=0", key: "CLx" },
+                    { r: 2, c: 5, rs: 2, label: "ENTER", f: "PREFIX", g: "LSTx", key: "ENTER", kind: "blue" },
+                    { r: 2, c: 6, label: "1", f: "", g: "x̂,r", key: "1" },
+                    { r: 2, c: 7, label: "2", f: "", g: "ŷ,r", key: "2" },
+                    { r: 2, c: 8, label: "3", f: "", g: "n!", key: "3" },
+                    { r: 2, c: 9, label: "−", f: "", g: "", key: "−" },
 
                     // Row 3
-                    { r: 4, c: 0, label: "R/S", f: "P/R", g: "PSE", key: "R/S" },
-                    { r: 4, c: 1, label: "SST", f: "Σ", g: "BST", key: "SST" },
-                    { r: 4, c: 2, label: "R↓", f: "PRGM", g: "GTO", key: "R↓" },
-                    { r: 4, c: 3, label: "x<>y", f: "FIN", g: "x≤y", key: "x<>y" },
-                    { r: 4, c: 4, label: "CLx", f: "REG", g: "x=0", key: "CLx" },
-                    { r: 4, c: 5, rs: 2, label: "ENTER", f: "PREFIX", g: "LSTx", key: "ENTER", kind: "blue" },
-                    { r: 4, c: 6, label: "1", f: "", g: "x̂,r", key: "1" },
-                    { r: 4, c: 7, label: "2", f: "", g: "ŷ,r", key: "2" },
-                    { r: 4, c: 8, label: "3", f: "", g: "n!", key: "3" },
-                    { r: 4, c: 9, label: "−", f: "", g: "", key: "−" },
-
-                    // Row 4
-                    { r: 5, c: 0, label: "ON", f: "", g: "", key: "ON", kind: "black" },
-                    { r: 5, c: 1, label: "f", f: "", g: "", key: "f", kind: "gold" },
-                    { r: 5, c: 2, label: "g", f: "", g: "", key: "g", kind: "blue" },
-                    { r: 5, c: 3, label: "STO", f: "", g: "", key: "STO" },
-                    { r: 5, c: 4, label: "RCL", f: "", g: "", key: "RCL" },
+                    { r: 3, c: 0, label: "ON", f: "", g: "", key: "ON", kind: "black" },
+                    { r: 3, c: 1, label: "f", f: "", g: "", key: "f", kind: "gold" },
+                    { r: 3, c: 2, label: "g", f: "", g: "", key: "g", kind: "blue" },
+                    { r: 3, c: 3, label: "STO", f: "", g: "", key: "STO" },
+                    { r: 3, c: 4, label: "RCL", f: "", g: "", key: "RCL" },
                     // Column 5 occupied by the double-height ENTER above.
-                    { r: 5, c: 6, label: "0", f: "", g: "x̄", key: "0" },
-                    { r: 5, c: 7, label: ".", f: "", g: "s", key: "." },
-                    { r: 5, c: 8, label: "Σ+", f: "", g: "Σ−", key: "Σ+" },
-                    { r: 5, c: 9, label: "+", f: "", g: "", key: "+" }
+                    { r: 3, c: 6, label: "0", f: "", g: "x̄", key: "0" },
+                    { r: 3, c: 7, label: ".", f: "", g: "s", key: "." },
+                    { r: 3, c: 8, label: "Σ+", f: "", g: "Σ−", key: "Σ+" },
+                    { r: 3, c: 9, label: "+", f: "", g: "", key: "+" }
                 ]
 
-                Loader {
-                    sourceComponent: modelData.kind === "section" ? sectionLabelComponent : calcButtonComponent
-                    Component {
-                        id: sectionLabelComponent
-                        SectionLabel {
-                            Layout.row: modelData.r
-                            Layout.column: modelData.c
-                            Layout.columnSpan: modelData.cs || 1
-                            Layout.rowSpan: 1
-                            text: modelData.label
-                            inkColor: win.inkColor
-                            pageColor: win.pageColor
-                        }
-                    }
-                    Component {
-                        id: calcButtonComponent
-                        CalcButton {
-                            Layout.row: modelData.r
-                            Layout.column: modelData.c
-                            Layout.rowSpan: modelData.rs || 1
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            label: modelData.label
-                            fLabel: modelData.f
-                            gLabel: modelData.g
-                            keyValue: modelData.key
-                            kind: modelData.kind || "white"
-                            pageColor: win.pageColor
+                CalcButton {
+                    Layout.row: modelData.r
+                    Layout.column: modelData.c
+                    Layout.rowSpan: modelData.rs || 1
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    label: modelData.label
+                    fLabel: modelData.f
+                    gLabel: modelData.g
+                    keyValue: modelData.key
+                    kind: modelData.kind || "white"
+                    pageColor: win.pageColor
                     inkColor: win.inkColor
                     accentColor: win.accentColor
                     activeKey: win.activeKey
