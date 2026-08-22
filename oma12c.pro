@@ -25,7 +25,7 @@ win32 {
 macx {
     TARGET = OMA12C
     QMAKE_INFO_PLIST = macos/Info.plist
-    CONFIG += app_bundle
+    CONFIG += app_bundle sdk_no_version_check
 }
 
 android {
