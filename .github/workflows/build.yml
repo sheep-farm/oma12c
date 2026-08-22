@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           export PATH="$IQTA_TOOLS/mingw1310_64/bin:$PATH"
-          QMAKE="$Qt6_DIR/bin/qmake" QMAKE_SPEC=win32-g++ bin/build-windows
+          QMAKE="$QT_ROOT_DIR/bin/qmake" QMAKE_SPEC=win32-g++ bin/build-windows
 
   macos:
     runs-on: macos-latest
@@ -49,7 +49,7 @@ jobs:
         with:
           version: '6.8.0'
       - name: Build
-        run: QMAKE="$Qt6_DIR/bin/qmake" bin/build-macos
+        run: QMAKE="$QT_ROOT_DIR/bin/qmake" bin/build-macos
 
   android:
     runs-on: ubuntu-latest
@@ -75,7 +75,7 @@ jobs:
           add-android-ndk-path: false
       - name: Build
         run: |
-          QMAKE="$Qt6_DIR/bin/qmake" \
+          QMAKE="$QT_ROOT_DIR/bin/qmake" \
           ANDROID_HOME="$ANDROID_HOME" \
           ANDROID_NDK="$ANDROID_HOME/ndk/26.1.10909125" \
           bin/build-android
