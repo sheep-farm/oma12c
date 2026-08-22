@@ -56,9 +56,58 @@ decimalSeparator=comma
 
 - `decimalSeparator` accepts `dot` (default) or `comma`.
 
+## Building
+
+### Linux
+
+The default build remains unchanged:
+
+```bash
+bin/build
+```
+
+Or install locally:
+
+```bash
+bin/install
+```
+
+### Windows
+
+Requires a Qt 6 Windows build (MinGW or MSVC) and a matching toolchain.
+
+```bash
+QMAKE=/path/to/qt-windows/bin/qmake bin/build-windows
+```
+
+The executable is produced in `build-windows/`.
+
+### macOS
+
+Requires Qt 6 for macOS and Xcode Command Line Tools.
+
+```bash
+QMAKE=/path/to/Qt/6.x.x/macos/bin/qmake bin/build-macos
+```
+
+The app bundle is produced in `build-macos/OMA12C.app`.
+
+### Android
+
+Requires the Android SDK, NDK, JDK 17+ and a Qt 6 for Android build.
+
+```bash
+QMAKE=$HOME/Qt/6.x.x/android_arm64_v8a/bin/qmake \
+ANDROID_HOME=$HOME/Android/Sdk \
+ANDROID_NDK=$HOME/Android/Sdk/ndk/xx.x.xxxxxxx \
+bin/build-android
+```
+
+The APK is produced in `build-android/android-build/build/outputs/apk/`.
+
 ## Requirements
 
-- Qt 6: `qt6-base`, `qt6-declarative`
-- `xdg-desktop-portal` and a portal backend
+- Qt 6: `qt6-base`, `qt6-declarative` (Linux); equivalent Qt 6 packages on other platforms
+- Linux: `xdg-desktop-portal` and a portal backend
 
 The iA Writer Mono font is bundled under the SIL Open Font License 1.1; see `fonts/OFL.txt`.

@@ -4,7 +4,9 @@
 
 #include <functional>
 
+#ifdef Q_OS_LINUX
 class QDBusVariant;
+#endif
 
 class SystemTheme : public QObject {
     Q_OBJECT
@@ -23,14 +25,18 @@ public slots:
     void refresh();
 
 private slots:
+#ifdef Q_OS_LINUX
     void handlePortalSettingChanged(const QString &nameSpace, const QString &key,
                                     const QDBusVariant &value);
+#endif
 
 private:
+#ifdef Q_OS_LINUX
     void requestPortalSetting(const QString &nameSpace, const QString &key,
                               std::function<void(const QVariant &)> handler);
     void requestPortalDarkMode();
     void requestPortalTextScale();
+#endif
     bool qtDarkMode(bool *known) const;
     void setDarkMode(bool darkMode);
     void setTextScale(qreal textScale);

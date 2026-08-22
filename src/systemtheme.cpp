@@ -1,14 +1,16 @@
 #include "systemtheme.h"
 
+#include <QGuiApplication>
+#include <QStyleHints>
+#include <QVariant>
+
+#ifdef Q_OS_LINUX
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusPendingCall>
 #include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
 #include <QDBusVariant>
-#include <QGuiApplication>
-#include <QStyleHints>
-#include <QVariant>
 
 namespace {
 QVariant unwrapVariant(QVariant value) {
@@ -62,6 +64,7 @@ bool gsettingsSchemeIsDark(const QVariant &value, bool *known) {
     return false;
 }
 }
+#endif
 
 SystemTheme::SystemTheme(QObject *parent) : QObject(parent) {
     // Start from what Qt already knows synchronously; the portal answers
@@ -76,6 +79,7 @@ SystemTheme::SystemTheme(QObject *parent) : QObject(parent) {
                 this, &SystemTheme::refresh);
     }
 
+#ifdef Q_OS_LINUX
     QDBusConnection::sessionBus().connect(
         QString(),
         QStringLiteral("/org/freedesktop/portal/desktop"),
@@ -86,6 +90,7 @@ SystemTheme::SystemTheme(QObject *parent) : QObject(parent) {
 
     requestPortalDarkMode();
     requestPortalTextScale();
+#endif
 }
 
 void SystemTheme::refresh() {
@@ -94,10 +99,13 @@ void SystemTheme::refresh() {
     if (known)
         setDarkMode(qtDark);
 
+#ifdef Q_OS_LINUX
     requestPortalDarkMode();
     requestPortalTextScale();
+#endif
 }
 
+#ifdef Q_OS_LINUX
 // Ask the desktop portal for a single setting without holding up the GUI
 // thread; the handler only runs when a valid answer comes back, so a missing
 // or stalled portal simply leaves the current state alone.
@@ -176,6 +184,7 @@ void SystemTheme::handlePortalSettingChanged(const QString &nameSpace, const QSt
     else
         refresh();
 }
+#endif
 
 bool SystemTheme::qtDarkMode(bool *known) const {
     *known = false;
