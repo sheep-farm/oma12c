@@ -1,0 +1,83 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.0'
+          modules: 'qtquickcontrols2'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev
+      - name: Build
+        run: bin/build
+      - name: Test
+        run: bin/test
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.0'
+          arch: 'win64_mingw'
+          modules: 'qtquickcontrols2'
+          tools: 'tools_mingw1310'
+      - name: Build
+        shell: bash
+        run: |
+          export PATH="$IQTA_TOOLS/mingw1310_64/bin:$PATH"
+          QMAKE="$Qt6_DIR/bin/qmake" QMAKE_SPEC=win32-g++ bin/build-windows
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.0'
+          modules: 'qtquickcontrols2'
+      - name: Build
+        run: QMAKE="$Qt6_DIR/bin/qmake" bin/build-macos
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Install Android SDK/NDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '12266719'
+      - name: Install NDK
+        run: sdkmanager --install "ndk;26.1.10909125"
+      - name: Install Qt for Android
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.0'
+          arch: 'android_arm64_v8a'
+          modules: 'qtquickcontrols2'
+      - name: Build
+        run: |
+          QMAKE="$Qt6_DIR/bin/qmake" \
+          ANDROID_HOME="$ANDROID_HOME" \
+          ANDROID_NDK="$ANDROID_HOME/ndk/26.1.10909125" \
+          bin/build-android
