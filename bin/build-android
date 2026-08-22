@@ -43,6 +43,6 @@ export ANDROID_NDK
 
 "$QMAKE" "$ROOT/oma12c.pro"
 make -j"$(nproc 2>/dev/null || echo 1)"
-make install
+make apk
 
 echo "APK built in $BUILD_DIR/android-build/build/outputs/apk/"
