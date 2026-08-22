@@ -63,7 +63,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          7z a -tzip dist/oma12c-windows-x86_64.zip ./build-windows/release/OMA12C.exe ./build-windows/release/*.dll ./build-windows/release/qml ./build-windows/release/icons
+          7z a -tzip dist/oma12c-windows-x86_64.zip ./build-windows/release -xr!*.o -xr!*.obj -xr!*.cpp -xr!*.h -xr!moc_* -xr!qrc_* -xr!moc_predefs*
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
