@@ -4,7 +4,7 @@
 #include <QStyleHints>
 #include <QVariant>
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusPendingCall>
@@ -79,7 +79,7 @@ SystemTheme::SystemTheme(QObject *parent) : QObject(parent) {
                 this, &SystemTheme::refresh);
     }
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
     QDBusConnection::sessionBus().connect(
         QString(),
         QStringLiteral("/org/freedesktop/portal/desktop"),
@@ -99,13 +99,13 @@ void SystemTheme::refresh() {
     if (known)
         setDarkMode(qtDark);
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
     requestPortalDarkMode();
     requestPortalTextScale();
 #endif
 }
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
 // Ask the desktop portal for a single setting without holding up the GUI
 // thread; the handler only runs when a valid answer comes back, so a missing
 // or stalled portal simply leaves the current state alone.

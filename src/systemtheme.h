@@ -4,7 +4,7 @@
 
 #include <functional>
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
 class QDBusVariant;
 #endif
 
@@ -25,13 +25,13 @@ public slots:
     void refresh();
 
 private slots:
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
     void handlePortalSettingChanged(const QString &nameSpace, const QString &key,
                                     const QDBusVariant &value);
 #endif
 
 private:
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
     void requestPortalSetting(const QString &nameSpace, const QString &key,
                               std::function<void(const QVariant &)> handler);
     void requestPortalDarkMode();
