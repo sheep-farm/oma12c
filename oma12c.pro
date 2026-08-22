@@ -30,7 +30,7 @@ macx {
 
 android {
     TARGET = oma12c
-    ANDROID_ABIS = armeabi-v7a arm64-v8a x86 x86_64
+    ANDROID_ABIS = arm64-v8a
     ANDROID_MIN_SDK_VERSION = 26
     ANDROID_TARGET_SDK_VERSION = 34
     ANDROID_VERSION_CODE = 1
